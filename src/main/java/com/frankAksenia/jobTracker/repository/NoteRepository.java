@@ -1,5 +1,16 @@
 package com.frankAksenia.jobTracker.repository;
 
-public class NoteRepository {
+import java.util.List;
+import java.util.UUID;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import com.frankAksenia.jobTracker.model.Note;
+
+@Repository 
+public interface NoteRepository extends JpaRepository<Note, UUID> {
+
+    List<Note> findByNoteId(UUID noteId);
     
 }

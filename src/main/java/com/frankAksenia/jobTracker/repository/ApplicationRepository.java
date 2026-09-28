@@ -1,5 +1,16 @@
 package com.frankAksenia.jobTracker.repository;
 
-public class ApplicationRepository {
+import java.util.List;
+import java.util.UUID;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import com.frankAksenia.jobTracker.model.JobApplication;
+
+@Repository 
+public interface ApplicationRepository extends JpaRepository<JobApplication, UUID>{
+
+    List<JobApplication> findByInterviewId(UUID applicationId);
     
 }
