@@ -7,9 +7,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import com.frankAksenia.jobTracker.model.JobApplication;
+import com.frankAksenia.jobTracker.model.User;
 
 @Repository 
-public interface UserRepository extends JpaRepository<JobApplication, UUID> {
+public interface UserRepository extends JpaRepository<User, UUID> {
 
     List<JobApplication> findByUserUd(UUID userID);
     

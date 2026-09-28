@@ -8,6 +8,7 @@ import java.util.UUID;
 
 import org.hibernate.annotations.UuidGenerator;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -30,7 +31,7 @@ public class JobApplication {
 
     @Id 
     @UuidGenerator 
-    private UUID application_id;
+    private UUID applicationId;
 
     private String companyName;
 
@@ -43,10 +44,11 @@ public class JobApplication {
     private String source;
 
     @Enumerated(EnumType.STRING)
-    private EApplicationStatus application_status;
+    private EApplicationStatus applicationStatus;
 
     private LocalDate applicationDate;
 
+    @Column (updatable = false)
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;

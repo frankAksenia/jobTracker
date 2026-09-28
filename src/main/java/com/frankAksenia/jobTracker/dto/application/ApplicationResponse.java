@@ -1,5 +1,15 @@
 package com.frankAksenia.jobTracker.dto.application;
 
-public record ApplicationResponse() {
-    
-}
+import java.time.LocalDate;
+
+import com.frankAksenia.jobTracker.model.EApplicationStatus;
+
+public record ApplicationResponse(
+    String companyName,
+    String position,
+    String location,
+    LocalDate applicationDate,
+    EApplicationStatus applicationStatus
+) {}
+
+

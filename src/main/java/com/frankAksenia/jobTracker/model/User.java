@@ -26,7 +26,7 @@ public class User {
 
     @Id 
     @UuidGenerator 
-    private UUID user_id;
+    private UUID userId;
 
     private String firstName;
 
