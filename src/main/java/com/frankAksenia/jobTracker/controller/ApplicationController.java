@@ -45,5 +45,4 @@ public class ApplicationController {
         ApplicationResponse response = this.applicationService.createApplication(request);
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
-    
 }

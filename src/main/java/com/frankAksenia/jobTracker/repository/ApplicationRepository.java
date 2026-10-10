@@ -11,5 +11,5 @@ import com.frankAksenia.jobTracker.model.JobApplication;
 @Repository 
 public interface ApplicationRepository extends JpaRepository<JobApplication, UUID>{
 
-    List<JobApplication> findByInterviewId(UUID interviewId);
+    List<JobApplication> findByApplicationId(UUID applicationId);
 }

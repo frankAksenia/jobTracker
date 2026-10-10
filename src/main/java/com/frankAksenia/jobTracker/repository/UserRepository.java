@@ -12,6 +12,6 @@ import com.frankAksenia.jobTracker.model.User;
 @Repository 
 public interface UserRepository extends JpaRepository<User, UUID> {
 
-    List<JobApplication> findByUserUd(UUID userID);
+    List<JobApplication> findByUserId(UUID userId);
     
 }
