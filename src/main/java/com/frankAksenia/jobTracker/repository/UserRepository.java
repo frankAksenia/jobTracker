@@ -13,5 +13,7 @@ import com.frankAksenia.jobTracker.model.User;
 public interface UserRepository extends JpaRepository<User, UUID> {
 
     List<JobApplication> findByUserId(UUID userId);
+
+    boolean existsByEmail(String string);
     
 }

@@ -102,9 +102,6 @@ logs/
 # =========================
 # Test / Coverage
 # =========================
+/src/test/
 coverage/
 jacoco.exec
-/test/
-
-
-
