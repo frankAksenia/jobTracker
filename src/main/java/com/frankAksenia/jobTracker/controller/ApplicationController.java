@@ -5,14 +5,17 @@ import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.frankAksenia.jobTracker.dto.application.ApplicationCreateRequest;
+import com.frankAksenia.jobTracker.dto.application.ApplicationCreateOrUpdateRequest;
 import com.frankAksenia.jobTracker.dto.application.ApplicationResponse;
 import com.frankAksenia.jobTracker.service.ApplicationService;
 
@@ -29,20 +32,36 @@ public class ApplicationController {
     }
 
     @GetMapping 
-    public ResponseEntity<List<ApplicationResponse>> getAllApplications() {
-        List<ApplicationResponse> response = this.applicationService.getAllApplications();
+    public ResponseEntity<List<ApplicationResponse>> getAllApplications(
+            @AuthenticationPrincipal UserDetails loggedInUser) {
+        List<ApplicationResponse> response = this.applicationService.getAllApplications(loggedInUser.getUsername());
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
     @GetMapping("/application")
-    public ResponseEntity<ApplicationResponse> getApplicationById(@RequestParam UUID applicationID) {
-        ApplicationResponse response = this.applicationService.getApplicationById(applicationID);
+    public ResponseEntity<ApplicationResponse> getApplicationById(
+            @RequestParam UUID applicationId,
+            @AuthenticationPrincipal UserDetails loggedInUser) {
+        ApplicationResponse response = this.applicationService.getApplicationById(applicationId, loggedInUser.getUsername());
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
-    @PostMapping
-    public ResponseEntity<ApplicationResponse> createApplication(@Valid @RequestBody ApplicationCreateRequest request) {
-        ApplicationResponse response = this.applicationService.createApplication(request);
+    @PostMapping("/application")
+    public ResponseEntity<ApplicationResponse> createApplication(
+            @Valid @RequestBody ApplicationCreateOrUpdateRequest request,
+            @AuthenticationPrincipal UserDetails loggedInUser
+    ) {
+        ApplicationResponse response = this.applicationService.createApplication(request, loggedInUser.getUsername());
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @PutMapping("/application")
+    public ResponseEntity<ApplicationResponse> updateApplication(
+            @Valid @RequestBody ApplicationCreateOrUpdateRequest request,
+            @AuthenticationPrincipal UserDetails loggedInUser
+    ) {
+        ApplicationResponse response = this.applicationService.updateApplication(request, loggedInUser.getUsername());
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
+
 }

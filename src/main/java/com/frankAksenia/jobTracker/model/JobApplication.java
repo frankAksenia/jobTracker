@@ -45,7 +45,7 @@ public class JobApplication {
     private String source;
 
     @Enumerated(EnumType.STRING)
-    private EApplicationStatus applicationStatus;
+    private EApplicationStatus status;
 
     private LocalDate applicationDate;
 
@@ -58,10 +58,10 @@ public class JobApplication {
     private User user;
 
     @OneToMany (mappedBy = "jobApplication")
-    private List<Interview> interviews = new ArrayList<>();
+    private List<Interview> interviews;
 
     @OneToMany (mappedBy = "jobApplication")
-    private List<Note> notes = new ArrayList<>();
+    private List<Note> notes;
 
     @PrePersist 
     private void onCreate() {
