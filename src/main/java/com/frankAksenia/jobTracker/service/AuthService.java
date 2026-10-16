@@ -9,7 +9,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.frankAksenia.jobTracker.dto.auth.RegisterRequest;
+import com.frankAksenia.jobTracker.dto.auth.LoginRequest;
 import com.frankAksenia.jobTracker.model.User;
+import com.frankAksenia.jobTracker.model.EUserRole;
 import com.frankAksenia.jobTracker.repository.UserRepository;
 
 @Service 
@@ -37,6 +39,16 @@ public class AuthService {
         user.setLastName(request.lastName().trim());
         user.setEmail(email);
         user.setPasswordHash(passwordEncoder.encode(request.password()));
+        user.setUserRole(EUserRole.APPLICANT);
         userRepository.save(user);
+    }
+
+    public void login(LoginRequest request) {
+        String email = request.email().trim().toLowerCase(Locale.ROOT);
+        User user = userRepository.findByEmail(email).orElse(null);
+        if (user == null || user.getPasswordHash() == null
+                || !passwordEncoder.matches(request.password(), user.getPasswordHash())) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid email or password");
+        }
     }
 }

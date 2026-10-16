@@ -71,7 +71,8 @@ No Spring profile is required. Setting the property to `false`, or omitting it,
 disables seeding. A command-line value overrides the value in the properties file.
 
 The API uses stateless HTTP Basic authentication backed by registered database
-accounts. Create an account with a `POST` request to
+accounts. Public registrations always receive the `APPLICANT` role; clients cannot
+choose or elevate their role. Create an applicant account with a `POST` request to
 `http://localhost:8080/api/auth/register` and this JSON body:
 
 ```sh
@@ -85,7 +86,6 @@ Auth**, enter the registered email as the username and its password, and send
 requests to `http://localhost:8080/api/applications`. Include those credentials
 on each request; the API does not issue tokens or use sessions. Use HTTPS outside
 local development because Basic Auth sends credentials with each request.
-
 To authenticate as one of the fictional seeded users, set `DEMO_SEED_ENABLED=true`
 and choose a strong local-only `DEMO_SEED_PASSWORD` in `.env`. Both seeded
 accounts use that password. Each account can access only its own applications.
@@ -95,19 +95,39 @@ those accounts. Other user accounts and their data are preserved. Any changes
 made to the fictional seed accounts' records or passwords are discarded on the
 next seeded startup.
 
+### Applicant and HR specialist roles
+
+Applicants can create applications and view, edit, change the status of, or delete
+only their own applications. HR specialists can view, edit, change the status of,
+or delete any applicant's application, but cannot create applicant-owned records.
+The seeded demo accounts are applicants.
+
+There is no public HR signup or role-change endpoint. To provision an HR specialist,
+first register an account normally, then have a trusted database administrator
+promote that account:
+
+```sql
+UPDATE users SET user_role = 'HR_SPECIALIST' WHERE email = 'hr@example.com';
+```
+
+The change takes effect on the account's next authentication. Do not expose database
+credentials to users or allow registration requests to assign roles.
+
 Application routes currently available:
 
 | Method | Path | Notes |
 | --- | --- | --- |
-| `GET` | `/api/applications` | List the authenticated user's applications |
-| `GET` | `/api/applications/application?applicationId=<uuid>` | Read one of the user's applications |
-| `POST` | `/api/applications/application` | Create an application; the date defaults to today |
-| `PUT` | `/api/applications/application` | Update one of the user's applications; include its `applicationId` |
+| `GET` | `/api/applications` | Applicants list their own; HR specialists list all |
+| `GET` | `/api/applications/application?applicationId=<uuid>` | Read an accessible application |
+| `POST` | `/api/applications/application` | Applicants create an application; the date defaults to today |
+| `PUT` | `/api/applications/application` | Update an accessible application; include its `applicationId` |
+| `PATCH` | `/api/applications/application/status?applicationId=<uuid>&newStatus=<status>` | Change status on an accessible application |
+| `DELETE` | `/api/applications/application?applicationId=<uuid>` | Delete an accessible application |
 
 Create/update requests accept JSON fields `companyName`, `position`, `location`,
 `jobUrl`, `source`, and `applicationDate` (`YYYY-MM-DD`). Get an `applicationId`
-from the response before updating; IDs belonging to another account are not
-readable or editable.
+from the response before updating. Applicants cannot access another applicant's
+IDs; HR specialists can manage applications across accounts.
 
 ### Included data
 

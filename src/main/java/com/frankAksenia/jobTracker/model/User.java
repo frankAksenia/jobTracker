@@ -9,11 +9,12 @@ import org.hibernate.annotations.UuidGenerator;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
@@ -21,7 +22,6 @@ import lombok.ToString;
 @Entity 
 @Data 
 @NoArgsConstructor 
-@AllArgsConstructor 
 @Table(name = "users")
 public class User {
 
@@ -39,6 +39,10 @@ public class User {
     @Column
     @ToString.Exclude
     private String passwordHash;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, columnDefinition = "varchar(32) default 'APPLICANT'")
+    private EUserRole userRole = EUserRole.APPLICANT;
 
     private LocalDateTime createdAt;
 

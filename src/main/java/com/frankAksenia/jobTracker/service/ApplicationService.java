@@ -1,7 +1,9 @@
 package com.frankAksenia.jobTracker.service;
 
-import java.util.List;
 import java.time.LocalDate;
+import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
@@ -15,6 +17,7 @@ import com.frankAksenia.jobTracker.mapper.ApplicationResponseMapper;
 import com.frankAksenia.jobTracker.model.EApplicationStatus;
 import com.frankAksenia.jobTracker.model.JobApplication;
 import com.frankAksenia.jobTracker.model.User;
+import com.frankAksenia.jobTracker.model.EUserRole;
 import com.frankAksenia.jobTracker.repository.ApplicationRepository;
 import com.frankAksenia.jobTracker.repository.UserRepository;
 
@@ -35,7 +38,10 @@ public class ApplicationService {
 
     public List<ApplicationResponse> getAllApplications(String userEmail) {
         User user = findUser(userEmail);
-        return this.applicationRepository.findAllByUser(user)
+        List<JobApplication> applications = isHrSpecialist(user)
+                ? this.applicationRepository.findAll()
+                : this.applicationRepository.findAllByUser(user);
+        return applications
                 .stream()
                 .map(ApplicationResponseMapper::mapToResponse)
                 .toList();
@@ -43,7 +49,7 @@ public class ApplicationService {
 
     public ApplicationResponse getApplicationById(UUID applicationID, String userEmail) {
         User user = findUser(userEmail);
-        return ApplicationResponseMapper.mapToResponse(this.applicationRepository.findByUserAndApplicationId(user, applicationID)
+        return ApplicationResponseMapper.mapToResponse(findAccessibleApplication(user, applicationID)
                 .orElseThrow(() -> new ResourceNotFoundException("Resource not found", "Application with the given ID does not exist.")));
     }
 
@@ -54,6 +60,9 @@ public class ApplicationService {
         }
 
         User user = findUser(userEmail);
+        if (isHrSpecialist(user)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "HR specialists cannot create applicant-owned applications");
+        }
          
         JobApplication newApplication = new JobApplication();
         applyEditableFields(newApplication, request);
@@ -76,7 +85,7 @@ public class ApplicationService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Application ID is required for an update");
         }
 
-        JobApplication application = this.applicationRepository.findByUserAndApplicationId(user, request.applicationId())
+        JobApplication application = findAccessibleApplication(user, request.applicationId())
             .orElseThrow(() -> new ResourceNotFoundException("Resource not found", "Application with the given ID does not exist for the specified user."));
 
         applyEditableFields(application, request);
@@ -104,5 +113,40 @@ public class ApplicationService {
                 .orElseThrow(() -> new ResourceNotFoundException("Resource not found", "User with the authenticated email does not exist."));
     }
 
-    
+    public ApplicationResponse updateApplicationStatus(UUID applicationId, String newStatus, String username) {
+        User user = findUser(username);
+
+        JobApplication application = findAccessibleApplication(user, applicationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Resource not found", "Application with the given ID does not exist for the specified user."));
+
+        EApplicationStatus status;
+        try {
+            status = EApplicationStatus.valueOf(newStatus.toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid status value: " + newStatus);
+        }
+
+        application.setStatus(status);
+        JobApplication updatedApplication = this.applicationRepository.save(application);
+
+        return ApplicationResponseMapper.mapToResponse(updatedApplication);
+    }
+
+    @Transactional
+    public void deleteApplication(UUID applicationId, String userEmail) {
+        User user = findUser(userEmail);
+        JobApplication application = findAccessibleApplication(user, applicationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Resource not found", "Application with the given ID does not exist for the specified user."));
+        applicationRepository.delete(application);
+    }
+
+    private Optional<JobApplication> findAccessibleApplication(User user, UUID applicationId) {
+        return isHrSpecialist(user)
+                ? applicationRepository.findById(applicationId)
+                : applicationRepository.findByUserAndApplicationId(user, applicationId);
+    }
+
+    private boolean isHrSpecialist(User user) {
+        return user.getUserRole() == EUserRole.HR_SPECIALIST;
+    }
 }

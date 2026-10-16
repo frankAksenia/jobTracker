@@ -9,6 +9,7 @@ import java.util.UUID;
 import org.hibernate.annotations.UuidGenerator;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -57,10 +58,10 @@ public class JobApplication {
     @ManyToOne (fetch = FetchType.LAZY, optional = false)
     private User user;
 
-    @OneToMany (mappedBy = "jobApplication")
+    @OneToMany (mappedBy = "jobApplication", cascade = CascadeType.REMOVE)
     private List<Interview> interviews;
 
-    @OneToMany (mappedBy = "jobApplication")
+    @OneToMany (mappedBy = "jobApplication", cascade = CascadeType.REMOVE)
     private List<Note> notes;
 
     @PrePersist 

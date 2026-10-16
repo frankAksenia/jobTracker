@@ -7,7 +7,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -46,6 +48,14 @@ public class ApplicationController {
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
+    @DeleteMapping("/application")
+    public ResponseEntity<Void> deleteApplication(
+            @RequestParam UUID applicationId,
+            @AuthenticationPrincipal UserDetails loggedInUser) {
+        applicationService.deleteApplication(applicationId, loggedInUser.getUsername());
+        return ResponseEntity.noContent().build();
+    }
+
     @PostMapping("/application")
     public ResponseEntity<ApplicationResponse> createApplication(
             @Valid @RequestBody ApplicationCreateOrUpdateRequest request,
@@ -61,6 +71,16 @@ public class ApplicationController {
             @AuthenticationPrincipal UserDetails loggedInUser
     ) {
         ApplicationResponse response = this.applicationService.updateApplication(request, loggedInUser.getUsername());
+        return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    @PatchMapping("/application/status")
+    public ResponseEntity<ApplicationResponse> updateApplicationStatus(
+            @RequestParam UUID applicationId,
+            @RequestParam String newStatus,
+            @AuthenticationPrincipal UserDetails loggedInUser
+    ) {
+        ApplicationResponse response = this.applicationService.updateApplicationStatus(applicationId, newStatus, loggedInUser.getUsername());
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 

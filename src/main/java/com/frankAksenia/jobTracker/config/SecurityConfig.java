@@ -27,7 +27,7 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .httpBasic(basic -> {})
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/register").permitAll()
+                .requestMatchers("/api/auth/register", "/api/auth/login").permitAll()
                 .anyRequest().authenticated()
             );
 
@@ -46,7 +46,7 @@ public class SecurityConfig {
                 .map(user -> User
                         .withUsername(user.getEmail())
                         .password(user.getPasswordHash())
-                        .roles("USER")
+                        .roles(user.getUserRole() == null ? "APPLICANT" : user.getUserRole().name())
                         .build())
                 .orElseThrow(() -> new UsernameNotFoundException("Invalid email or password"));
     }

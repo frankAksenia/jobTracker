@@ -16,6 +16,7 @@ import com.frankAksenia.jobTracker.model.Interview;
 import com.frankAksenia.jobTracker.model.JobApplication;
 import com.frankAksenia.jobTracker.model.Note;
 import com.frankAksenia.jobTracker.model.User;
+import com.frankAksenia.jobTracker.model.EUserRole;
 import com.frankAksenia.jobTracker.repository.ApplicationRepository;
 import com.frankAksenia.jobTracker.repository.InterviewRepository;
 import com.frankAksenia.jobTracker.repository.NoteRepository;
@@ -133,6 +134,7 @@ public class DemoDataSeeder implements ApplicationRunner {
         user.setLastName(lastName);
         user.setEmail(email);
         user.setPasswordHash(passwordEncoder.encode(seedPassword));
+        user.setUserRole(EUserRole.APPLICANT);
         return userRepository.save(user);
     }
 

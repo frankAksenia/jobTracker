@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 
+import com.frankAksenia.jobTracker.dto.auth.LoginRequest;
 import com.frankAksenia.jobTracker.dto.auth.RegisterRequest;
 import com.frankAksenia.jobTracker.service.AuthService;
 
@@ -26,5 +27,12 @@ public class AuthController {
     public ResponseEntity<Void> register(@Valid @RequestBody RegisterRequest request) {
         authService.register(request);
         return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    // TODO: Implement JWT authentication and return a token in the response body
+    @PostMapping("/login")
+    public ResponseEntity<Void> login(@Valid @RequestBody LoginRequest request) {
+        authService.login(request);
+        return ResponseEntity.status(HttpStatus.OK).build();
     }
 }
