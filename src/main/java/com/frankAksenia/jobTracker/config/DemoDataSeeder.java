@@ -5,6 +5,8 @@ import java.time.LocalDate;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,28 +29,35 @@ public class DemoDataSeeder implements ApplicationRunner {
     private final ApplicationRepository applicationRepository;
     private final InterviewRepository interviewRepository;
     private final NoteRepository noteRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final String seedPassword;
 
-    public DemoDataSeeder(UserRepository userRepository, ApplicationRepository applicationRepository, InterviewRepository interviewRepository, NoteRepository noteRepository) {
+    public DemoDataSeeder(UserRepository userRepository, ApplicationRepository applicationRepository,
+            InterviewRepository interviewRepository, NoteRepository noteRepository,
+            PasswordEncoder passwordEncoder,
+            @Value("${jobtracker.demo.seed.password:}") String seedPassword) {
         this.userRepository = userRepository;
         this.applicationRepository = applicationRepository;
         this.interviewRepository = interviewRepository;
         this.noteRepository = noteRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.seedPassword = seedPassword;
     }
 
     @Override
     @Transactional
     public void run(ApplicationArguments args) {
+        int seedPasswordBytes = seedPassword.getBytes(java.nio.charset.StandardCharsets.UTF_8).length;
+        if (seedPasswordBytes < 12 || seedPasswordBytes > 72) {
+            throw new IllegalStateException("When demo seeding is enabled, DEMO_SEED_PASSWORD must be 12 to 72 UTF-8 bytes.");
+        }
         LocalDate today = LocalDate.now();
         seedMaya(today);
         seedAlex(today);
     }
 
-    private boolean seedMaya(LocalDate today) {
-        if (userRepository.existsByEmail("maya.chen@example.test")) {
-            return false;
-        }
-        User maya = createUser("Maya", "Chen", "maya.chen@example.test");
-
+    private void seedMaya(LocalDate today) {
+        User maya = resetSeedUser("Maya", "Chen", "maya.chen@example.test");
         createApplication(maya, "Cloudberry Labs", "Junior Java Developer", "Vienna, Austria",
                 EApplicationStatus.SAVED, null,
                 "Saved for later. Tailor the CV to highlight the Spring Boot portfolio project.");
@@ -74,15 +83,10 @@ public class DemoDataSeeder implements ApplicationRunner {
         createApplication(maya, "Maple Digital", "Full Stack Developer", "Remote",
                 EApplicationStatus.WITHDRAWN, today.minusDays(15),
                 "Withdrew because the role required travel that did not fit the current schedule.");
-        return true;
     }
 
-    private boolean seedAlex(LocalDate today) {
-        if (userRepository.existsByEmail("alex.morgan@example.test")) {
-            return false;
-        }
-        User alex = createUser("Alex", "Morgan", "alex.morgan@example.test");
-
+    private void seedAlex(LocalDate today) {
+        User alex = resetSeedUser("Alex", "Morgan", "alex.morgan@example.test");
         createApplication(alex, "Silver Fern Studio", "Frontend Developer", "Vienna, Austria",
                 EApplicationStatus.SAVED, null,
                 "Bookmark the role and prepare examples of accessible user interfaces.");
@@ -108,7 +112,19 @@ public class DemoDataSeeder implements ApplicationRunner {
         createApplication(alex, "Cedar Compass", "Project Coordinator", "Salzburg, Austria",
                 EApplicationStatus.WITHDRAWN, today.minusDays(13),
                 "Withdrew to focus on roles with more research and analysis responsibilities.");
-        return true;
+    }
+
+    private User resetSeedUser(String firstName, String lastName, String email) {
+        userRepository.findByEmail(email).ifPresent(user -> {
+            for (JobApplication application : applicationRepository.findAllByUser(user)) {
+                interviewRepository.deleteAll(interviewRepository.findAllByJobApplication(application));
+                noteRepository.deleteAll(noteRepository.findAllByJobApplication(application));
+                applicationRepository.delete(application);
+            }
+            userRepository.delete(user);
+            userRepository.flush();
+        });
+        return createUser(firstName, lastName, email);
     }
 
     private User createUser(String firstName, String lastName, String email) {
@@ -116,6 +132,7 @@ public class DemoDataSeeder implements ApplicationRunner {
         user.setFirstName(firstName);
         user.setLastName(lastName);
         user.setEmail(email);
+        user.setPasswordHash(passwordEncoder.encode(seedPassword));
         return userRepository.save(user);
     }
 
@@ -127,7 +144,7 @@ public class DemoDataSeeder implements ApplicationRunner {
         application.setLocation(location);
         application.setJobUrl("https://jobs.example.test/openings");
         application.setSource("Fictional careers page");
-        application.setApplicationStatus(status);
+        application.setStatus(status);
         application.setApplicationDate(applicationDate);
         application.setUser(user);
         JobApplication savedApplication = applicationRepository.save(application);

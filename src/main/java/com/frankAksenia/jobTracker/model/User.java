@@ -16,6 +16,7 @@ import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 @Entity 
 @Data 
@@ -35,10 +36,14 @@ public class User {
     @Column(nullable = false, unique = true)
     private String email;
 
+    @Column
+    @ToString.Exclude
+    private String passwordHash;
+
     private LocalDateTime createdAt;
 
     @OneToMany (mappedBy = "user")
-    private List<JobApplication> jobApplications = new ArrayList<>();
+    private List<JobApplication> jobApplications;
 
     @PrePersist 
     private void onCreate() {
