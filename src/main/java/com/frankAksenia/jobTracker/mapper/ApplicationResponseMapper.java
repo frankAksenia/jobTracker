@@ -9,11 +9,12 @@ public final class ApplicationResponseMapper {
 
     public static ApplicationResponse mapToResponse(JobApplication jobApplication) {
         return  new ApplicationResponse(
+                jobApplication.getApplicationId(),
                 jobApplication.getCompanyName(),
                 jobApplication.getPosition(),
                 jobApplication.getLocation(),
                 jobApplication.getApplicationDate(),
-                jobApplication.getApplicationStatus()
+                jobApplication.getStatus()
         );
     }
 }
