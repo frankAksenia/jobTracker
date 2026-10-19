@@ -8,7 +8,7 @@ public final class ApplicationResponseMapper {
     private ApplicationResponseMapper() {}
 
     public static ApplicationResponse mapToResponse(JobApplication jobApplication) {
-        return  new ApplicationResponse(
+        return new ApplicationResponse(
                 jobApplication.getApplicationId(),
                 jobApplication.getCompanyName(),
                 jobApplication.getPosition(),

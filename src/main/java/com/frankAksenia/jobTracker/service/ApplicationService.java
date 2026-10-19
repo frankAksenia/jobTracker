@@ -10,8 +10,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.frankAksenia.jobTracker.dto.application.ApplicationCreateOrUpdateRequest;
+import com.frankAksenia.jobTracker.dto.application.ApplicationCreateRequest;
 import com.frankAksenia.jobTracker.dto.application.ApplicationResponse;
+import com.frankAksenia.jobTracker.dto.application.ApplicationUpdateRequest;
 import com.frankAksenia.jobTracker.exception.ResourceNotFoundException;
 import com.frankAksenia.jobTracker.mapper.ApplicationResponseMapper;
 import com.frankAksenia.jobTracker.model.EApplicationStatus;
@@ -41,10 +42,7 @@ public class ApplicationService {
         List<JobApplication> applications = isHrSpecialist(user)
                 ? this.applicationRepository.findAll()
                 : this.applicationRepository.findAllByUser(user);
-        return applications
-                .stream()
-                .map(ApplicationResponseMapper::mapToResponse)
-                .toList();
+        return applications.stream().map(ApplicationResponseMapper::mapToResponse).toList();
     }
 
     public ApplicationResponse getApplicationById(UUID applicationID, String userEmail) {
@@ -54,17 +52,15 @@ public class ApplicationService {
     }
 
     @Transactional
-    public ApplicationResponse createApplication(ApplicationCreateOrUpdateRequest request, String userEmail) {
-        if (request.applicationId() != null)
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Application ID must not be provided when creating an application");
-
+    public ApplicationResponse createApplication(ApplicationCreateRequest request, String userEmail) {
         User user = findUser(userEmail);
         if (isHrSpecialist(user))
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "HR specialists cannot create applicant-owned applications");
 
         JobApplication newApplication = new JobApplication();
 
-        applyEditableFields(newApplication, request);
+        applyEditableFields(newApplication, request.companyName(), request.position(), request.location(),
+                request.jobUrl(), request.source(), request.applicationDate());
 
         newApplication.setStatus(EApplicationStatus.APPLIED);
         newApplication.setApplicationDate(request.applicationDate() == null ? LocalDate.now() : request.applicationDate());
@@ -76,17 +72,15 @@ public class ApplicationService {
     }
 
     @Transactional
-    public ApplicationResponse updateApplication(ApplicationCreateOrUpdateRequest request, String userEmail) {
+    public ApplicationResponse updateApplication(ApplicationUpdateRequest request, String userEmail) {
 
         User user = findUser(userEmail);
-
-        if (request.applicationId() == null)
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Application ID is required for an update");
 
         JobApplication application = findAccessibleApplication(user, request.applicationId())
             .orElseThrow(() -> new ResourceNotFoundException("Resource not found", "Application with the given ID does not exist for the specified user."));
 
-        applyEditableFields(application, request);
+        applyEditableFields(application, request.companyName(), request.position(), request.location(),
+                request.jobUrl(), request.source(), request.applicationDate());
 
         JobApplication updatedApplication = this.applicationRepository.save(application);
 
@@ -94,15 +88,15 @@ public class ApplicationService {
     }
 
 
-    private void applyEditableFields(JobApplication application, ApplicationCreateOrUpdateRequest request) {
-
-        application.setCompanyName(request.companyName());
-        application.setPosition(request.position());
-        application.setLocation(request.location());
-        application.setJobUrl(request.jobUrl());
-        application.setSource(request.source());
-        if (request.applicationDate() != null) {
-            application.setApplicationDate(request.applicationDate());
+    private void applyEditableFields(JobApplication application, String companyName, String position,
+            String location, String jobUrl, String source, LocalDate applicationDate) {
+        application.setCompanyName(companyName);
+        application.setPosition(position);
+        application.setLocation(location);
+        application.setJobUrl(jobUrl);
+        application.setSource(source);
+        if (applicationDate != null) {
+            application.setApplicationDate(applicationDate);
         }
     }
 

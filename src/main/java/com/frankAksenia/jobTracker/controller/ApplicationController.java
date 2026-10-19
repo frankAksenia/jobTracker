@@ -17,9 +17,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.frankAksenia.jobTracker.dto.application.ApplicationCreateOrUpdateRequest;
+import com.frankAksenia.jobTracker.dto.application.ApplicationCreateRequest;
 import com.frankAksenia.jobTracker.dto.application.ApplicationResponse;
 import com.frankAksenia.jobTracker.dto.application.ApplicationStatusUpdateRequest;
+import com.frankAksenia.jobTracker.dto.application.ApplicationUpdateRequest;
 import com.frankAksenia.jobTracker.service.ApplicationService;
 
 import jakarta.validation.Valid;
@@ -59,7 +60,7 @@ public class ApplicationController {
 
     @PostMapping("/application")
     public ResponseEntity<ApplicationResponse> createApplication(
-            @Valid @RequestBody ApplicationCreateOrUpdateRequest request,
+            @Valid @RequestBody ApplicationCreateRequest request,
             @AuthenticationPrincipal UserDetails loggedInUser
     ) {
         ApplicationResponse response = this.applicationService.createApplication(request, loggedInUser.getUsername());
@@ -68,7 +69,7 @@ public class ApplicationController {
 
     @PutMapping("/application")
     public ResponseEntity<ApplicationResponse> updateApplication(
-            @Valid @RequestBody ApplicationCreateOrUpdateRequest request,
+            @Valid @RequestBody ApplicationUpdateRequest request,
             @AuthenticationPrincipal UserDetails loggedInUser
     ) {
         ApplicationResponse response = this.applicationService.updateApplication(request, loggedInUser.getUsername());
