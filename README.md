@@ -97,10 +97,11 @@ next seeded startup.
 
 ### Applicant and HR specialist roles
 
-Applicants can create applications and view, edit, change the status of, or delete
-only their own applications. HR specialists can view, edit, change the status of,
-or delete any applicant's application, but cannot create applicant-owned records.
-The seeded demo accounts are applicants.
+Applicants can create, view, edit, or delete only their own applications. They
+cannot change application status; new applications start as `APPLIED`. HR
+specialists can view, edit, change the status of, or delete any applicant's
+application, but cannot create applicant-owned records. The seeded demo accounts
+are applicants.
 
 There is no public HR signup or role-change endpoint. To provision an HR specialist,
 first register an account normally, then have a trusted database administrator
@@ -121,13 +122,29 @@ Application routes currently available:
 | `GET` | `/api/applications/application?applicationId=<uuid>` | Read an accessible application |
 | `POST` | `/api/applications/application` | Applicants create an application; the date defaults to today |
 | `PUT` | `/api/applications/application` | Update an accessible application; include its `applicationId` |
-| `PATCH` | `/api/applications/application/status?applicationId=<uuid>&newStatus=<status>` | Change status on an accessible application |
+| `PATCH` | `/api/applications/application/status` | HR specialists only: change status using JSON `applicationId` and `newStatus` |
 | `DELETE` | `/api/applications/application?applicationId=<uuid>` | Delete an accessible application |
+| `GET` | `/api/applications/{applicationId}/interviews` | Applicants view interviews for their own application; HR can view any |
+| `GET` | `/api/applicants/{applicantEmail}/interviews` | Applicants may view their own; HR specialists may view any applicant |
+| `GET` | `/api/applications/{applicationId}/interviews` | Applicants view interviews for their own application; HR can view any |
+| `GET` | `/api/applicants/{applicantEmail}/interviews` | View interviews by applicant; applicants may request only their own |
+| `GET` | `/api/interviews` | HR specialists only: list all interviews |
 
-Create/update requests accept JSON fields `companyName`, `position`, `location`,
-`jobUrl`, `source`, and `applicationDate` (`YYYY-MM-DD`). Get an `applicationId`
-from the response before updating. Applicants cannot access another applicant's
-IDs; HR specialists can manage applications across accounts.
+Create requests accept JSON fields `companyName`, `position`, `location`, `jobUrl`,
+`source`, and `applicationDate` (`YYYY-MM-DD`). Update requests accept the same
+fields plus the required `applicationId`, which you can get from the response.
+Applicants cannot access another applicant's IDs; HR specialists can manage
+applications across accounts.
+
+To change an application's status, send `PATCH /api/applications/application/status`
+with a JSON body such as:
+
+```json
+{
+  "applicationId": "0d4bf92a-b496-45c7-b245-df8259f6d870",
+  "newStatus": "OFFER"
+}
+```
 
 ### Included data
 
