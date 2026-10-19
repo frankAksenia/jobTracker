@@ -1,7 +1,6 @@
 package com.frankAksenia.jobTracker.model;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -41,7 +40,7 @@ public class User {
     private String passwordHash;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, columnDefinition = "varchar(32) default 'APPLICANT'")
+    @Column(nullable = false, length = 32)
     private EUserRole userRole = EUserRole.APPLICANT;
 
     private LocalDateTime createdAt;

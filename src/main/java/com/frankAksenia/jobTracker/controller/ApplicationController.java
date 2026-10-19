@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.frankAksenia.jobTracker.dto.application.ApplicationCreateOrUpdateRequest;
 import com.frankAksenia.jobTracker.dto.application.ApplicationResponse;
+import com.frankAksenia.jobTracker.dto.application.ApplicationStatusUpdateRequest;
 import com.frankAksenia.jobTracker.service.ApplicationService;
 
 import jakarta.validation.Valid;
@@ -76,11 +77,11 @@ public class ApplicationController {
 
     @PatchMapping("/application/status")
     public ResponseEntity<ApplicationResponse> updateApplicationStatus(
-            @RequestParam UUID applicationId,
-            @RequestParam String newStatus,
+            @Valid @RequestBody ApplicationStatusUpdateRequest request,
             @AuthenticationPrincipal UserDetails loggedInUser
     ) {
-        ApplicationResponse response = this.applicationService.updateApplicationStatus(applicationId, newStatus, loggedInUser.getUsername());
+        ApplicationResponse response = this.applicationService.updateApplicationStatus(
+                request.applicationId(), request.newStatus(), loggedInUser.getUsername());
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 

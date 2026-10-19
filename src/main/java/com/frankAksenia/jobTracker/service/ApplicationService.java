@@ -55,16 +55,15 @@ public class ApplicationService {
 
     @Transactional
     public ApplicationResponse createApplication(ApplicationCreateOrUpdateRequest request, String userEmail) {
-        if (request.applicationId() != null) {
+        if (request.applicationId() != null)
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Application ID must not be provided when creating an application");
-        }
 
         User user = findUser(userEmail);
-        if (isHrSpecialist(user)) {
+        if (isHrSpecialist(user))
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "HR specialists cannot create applicant-owned applications");
-        }
-         
+
         JobApplication newApplication = new JobApplication();
+
         applyEditableFields(newApplication, request);
 
         newApplication.setStatus(EApplicationStatus.APPLIED);
@@ -81,9 +80,8 @@ public class ApplicationService {
 
         User user = findUser(userEmail);
 
-        if (request.applicationId() == null) {
+        if (request.applicationId() == null)
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Application ID is required for an update");
-        }
 
         JobApplication application = findAccessibleApplication(user, request.applicationId())
             .orElseThrow(() -> new ResourceNotFoundException("Resource not found", "Application with the given ID does not exist for the specified user."));
@@ -116,10 +114,14 @@ public class ApplicationService {
     public ApplicationResponse updateApplicationStatus(UUID applicationId, String newStatus, String username) {
         User user = findUser(username);
 
+        if (!isHrSpecialist(user))
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only HR specialists can change application status");
+
         JobApplication application = findAccessibleApplication(user, applicationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Resource not found", "Application with the given ID does not exist for the specified user."));
 
         EApplicationStatus status;
+
         try {
             status = EApplicationStatus.valueOf(newStatus.toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException e) {
