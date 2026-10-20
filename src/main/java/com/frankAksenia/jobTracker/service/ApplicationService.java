@@ -18,9 +18,7 @@ import com.frankAksenia.jobTracker.mapper.ApplicationResponseMapper;
 import com.frankAksenia.jobTracker.model.EApplicationStatus;
 import com.frankAksenia.jobTracker.model.JobApplication;
 import com.frankAksenia.jobTracker.model.User;
-import com.frankAksenia.jobTracker.model.EUserRole;
 import com.frankAksenia.jobTracker.repository.ApplicationRepository;
-import com.frankAksenia.jobTracker.repository.UserRepository;
 
 import jakarta.transaction.Transactional;
 
@@ -30,31 +28,31 @@ public class ApplicationService {
 
     private final ApplicationRepository applicationRepository;
 
-    private final UserRepository userRepository;
+    private final UserService userService;
 
-    public ApplicationService(ApplicationRepository applicationRepository, UserRepository userRepository) {
+    public ApplicationService(ApplicationRepository applicationRepository, UserService userService) {
         this.applicationRepository = applicationRepository;
-        this.userRepository = userRepository;
+        this.userService = userService;
     }
 
     public List<ApplicationResponse> getAllApplications(String userEmail) {
-        User user = findUser(userEmail);
-        List<JobApplication> applications = isHrSpecialist(user)
+        User user = userService.getUserByEmailOrThrow(userEmail);
+        List<JobApplication> applications = userService.isHrSpecialist(user)
                 ? this.applicationRepository.findAll()
                 : this.applicationRepository.findAllByUser(user);
         return applications.stream().map(ApplicationResponseMapper::mapToResponse).toList();
     }
 
     public ApplicationResponse getApplicationById(UUID applicationID, String userEmail) {
-        User user = findUser(userEmail);
+        User user = userService.getUserByEmailOrThrow(userEmail);
         return ApplicationResponseMapper.mapToResponse(findAccessibleApplication(user, applicationID)
                 .orElseThrow(() -> new ResourceNotFoundException("Resource not found", "Application with the given ID does not exist.")));
     }
 
     @Transactional
     public ApplicationResponse createApplication(ApplicationCreateRequest request, String userEmail) {
-        User user = findUser(userEmail);
-        if (isHrSpecialist(user))
+        User user = userService.getUserByEmailOrThrow(userEmail);
+        if (userService.isHrSpecialist(user))
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "HR specialists cannot create applicant-owned applications");
 
         JobApplication newApplication = new JobApplication();
@@ -74,7 +72,7 @@ public class ApplicationService {
     @Transactional
     public ApplicationResponse updateApplication(ApplicationUpdateRequest request, String userEmail) {
 
-        User user = findUser(userEmail);
+        User user = userService.getUserByEmailOrThrow(userEmail);
 
         JobApplication application = findAccessibleApplication(user, request.applicationId())
             .orElseThrow(() -> new ResourceNotFoundException("Resource not found", "Application with the given ID does not exist for the specified user."));
@@ -100,49 +98,41 @@ public class ApplicationService {
         }
     }
 
-    private User findUser(String userEmail) {
-        return this.userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new ResourceNotFoundException("Resource not found", "User with the authenticated email does not exist."));
-    }
-
+    
     public ApplicationResponse updateApplicationStatus(UUID applicationId, String newStatus, String username) {
-        User user = findUser(username);
-
-        if (!isHrSpecialist(user))
+        User user = userService.getUserByEmailOrThrow(username);
+        
+        if (!userService.isHrSpecialist(user))
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only HR specialists can change application status");
-
+        
         JobApplication application = findAccessibleApplication(user, applicationId)
-                .orElseThrow(() -> new ResourceNotFoundException("Resource not found", "Application with the given ID does not exist for the specified user."));
-
+        .orElseThrow(() -> new ResourceNotFoundException("Resource not found", "Application with the given ID does not exist for the specified user."));
+        
         EApplicationStatus status;
-
+        
         try {
             status = EApplicationStatus.valueOf(newStatus.toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid status value: " + newStatus);
         }
-
+        
         application.setStatus(status);
         JobApplication updatedApplication = this.applicationRepository.save(application);
-
+        
         return ApplicationResponseMapper.mapToResponse(updatedApplication);
     }
-
+    
     @Transactional
     public void deleteApplication(UUID applicationId, String userEmail) {
-        User user = findUser(userEmail);
+        User user = userService.getUserByEmailOrThrow(userEmail);
         JobApplication application = findAccessibleApplication(user, applicationId)
-                .orElseThrow(() -> new ResourceNotFoundException("Resource not found", "Application with the given ID does not exist for the specified user."));
+        .orElseThrow(() -> new ResourceNotFoundException("Resource not found", "Application with the given ID does not exist for the specified user."));
         applicationRepository.delete(application);
     }
-
+    
     private Optional<JobApplication> findAccessibleApplication(User user, UUID applicationId) {
-        return isHrSpecialist(user)
-                ? applicationRepository.findById(applicationId)
-                : applicationRepository.findByUserAndApplicationId(user, applicationId);
-    }
-
-    private boolean isHrSpecialist(User user) {
-        return user.getUserRole() == EUserRole.HR_SPECIALIST;
+        return userService.isHrSpecialist(user)
+        ? applicationRepository.findById(applicationId)
+        : applicationRepository.findByUserAndApplicationId(user, applicationId);
     }
 }

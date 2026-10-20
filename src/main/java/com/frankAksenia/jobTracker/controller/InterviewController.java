@@ -56,7 +56,7 @@ public class InterviewController {
         @AuthenticationPrincipal UserDetails loggedInUser
     ) {
         InterviewResponse response = interviewService.createInterview(request, loggedInUser);
-        return ResponseEntity.status(HttpStatus.ACCEPTED).body(response);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @PutMapping 

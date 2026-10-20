@@ -16,13 +16,11 @@ import com.frankAksenia.jobTracker.dto.interview.InterviewUpdateRequest;
 import com.frankAksenia.jobTracker.exception.ResourceNotFoundException;
 import com.frankAksenia.jobTracker.mapper.InterviewResponseMapper;
 import com.frankAksenia.jobTracker.model.EInterviewType;
-import com.frankAksenia.jobTracker.model.EUserRole;
 import com.frankAksenia.jobTracker.model.Interview;
 import com.frankAksenia.jobTracker.model.JobApplication;
 import com.frankAksenia.jobTracker.model.User;
 import com.frankAksenia.jobTracker.repository.ApplicationRepository;
 import com.frankAksenia.jobTracker.repository.InterviewRepository;
-import com.frankAksenia.jobTracker.repository.UserRepository;
 
 import jakarta.transaction.Transactional;
 
@@ -31,17 +29,18 @@ public class InterviewService {
 
     private final InterviewRepository interviewRepository;
     private final ApplicationRepository applicationRepository;
-    private final UserRepository userRepository;
+    private final UserService userService;
 
-    public InterviewService(InterviewRepository interviewRepository, ApplicationRepository applicationRepository, UserRepository userRepository) {
+    public InterviewService(InterviewRepository interviewRepository, ApplicationRepository applicationRepository,
+            UserService userService) {
         this.interviewRepository = interviewRepository;
         this.applicationRepository = applicationRepository;
-        this.userRepository = userRepository;
+        this.userService = userService;
     }
 
     public List<InterviewResponse> getAllInterviewsByApplicationId(UUID applicationId, String username) {
-        User currentUser = findUser(username);
-        JobApplication jobApplication = isHrSpecialist(currentUser)
+        User currentUser = userService.getUserByEmailOrThrow(username);
+        JobApplication jobApplication = userService.isHrSpecialist(currentUser)
                 ? applicationRepository.findById(applicationId)
                     .orElseThrow(() -> new ResourceNotFoundException("Resource not found", "Job application not found"))
                 : applicationRepository.findByUserAndApplicationId(currentUser, applicationId)
@@ -51,14 +50,13 @@ public class InterviewService {
     }
 
     public List<InterviewResponse> getAllInterviewsByApplicant(String applicantEmail, String username) {
-        User currentUser = findUser(username);
+        User currentUser = userService.getUserByEmailOrThrow(username);
         String normalizedApplicantEmail = applicantEmail.toLowerCase(Locale.ROOT);
-        if (!isHrSpecialist(currentUser) && !currentUser.getEmail().equalsIgnoreCase(normalizedApplicantEmail)) 
+        if (!userService.isHrSpecialist(currentUser) && !currentUser.getEmail().equalsIgnoreCase(normalizedApplicantEmail)) 
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Applicants can only view their own interviews");
         
 
-        User applicant = userRepository.findByEmail(normalizedApplicantEmail)
-                .orElseThrow(() -> new ResourceNotFoundException("Resource not found", "User not found"));
+        User applicant = userService.getUserByEmailOrThrow(normalizedApplicantEmail);
 
         List<JobApplication> applications = applicationRepository.findAllByUser(applicant);
         return applications.stream()
@@ -105,18 +103,9 @@ public class InterviewService {
     }
 
     private void requireHrSpecialist(String username) {
-        if (!isHrSpecialist(findUser(username))) {
+        if (!userService.isHrSpecialist(userService.getUserByEmailOrThrow(username))) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only HR specialists can view all interviews");
         }
-    }
-
-    private User findUser(String email) {
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("Resource not found", "User not found"));
-    }
-
-    private boolean isHrSpecialist(User user) {
-        return user.getUserRole() == EUserRole.HR_SPECIALIST;
     }
 
 
