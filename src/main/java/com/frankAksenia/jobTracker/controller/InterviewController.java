@@ -50,22 +50,24 @@ public class InterviewController {
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
-    @PostMapping 
+    @PostMapping("/applications/{applicationId}/interviews")
     public ResponseEntity<InterviewResponse> createInterview(
+        @PathVariable UUID applicationId,
         @Valid @RequestBody InterviewCreateRequest request,
         @AuthenticationPrincipal UserDetails loggedInUser
     ) {
-        InterviewResponse response = interviewService.createInterview(request, loggedInUser);
+        InterviewResponse response = interviewService.createInterview(applicationId, request, loggedInUser);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    @PutMapping 
+    @PutMapping("/interviews/{interviewId}")
     public ResponseEntity<InterviewResponse> updateInterview(
+        @PathVariable UUID interviewId,
         @Valid @RequestBody InterviewUpdateRequest request,
         @AuthenticationPrincipal UserDetails loggedInUser
     ) {
-        InterviewResponse response = interviewService.updateInterview(request, loggedInUser);
-        return ResponseEntity.status(HttpStatus.ACCEPTED).body(response);
+        InterviewResponse response = interviewService.updateInterview(interviewId, request, loggedInUser);
+        return ResponseEntity.ok(response);
     }
 
 }

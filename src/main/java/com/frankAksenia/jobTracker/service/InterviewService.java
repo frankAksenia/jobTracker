@@ -65,15 +65,17 @@ public class InterviewService {
                 .toList();
     }
 
-    public InterviewResponse createInterview(InterviewCreateRequest request, UserDetails loggedInUser) {
+    public InterviewResponse createInterview(UUID applicationId, InterviewCreateRequest request, UserDetails loggedInUser) {
 
         requireHrSpecialist(loggedInUser.getUsername());
+        JobApplication application = applicationRepository.findById(applicationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Resource not found", "Job application not found"));
 
         Interview newInterview = new Interview();
 
         this.applyEditableFields(newInterview, request.interviewType(), request.scheduledAt(), request.durationMinutes(), request.location(), request.interviewer(), request.description());
 
-        newInterview.setJobApplication(applicationRepository.findById(request.applicationId()).get());
+        newInterview.setJobApplication(application);
 
         Interview savedInterview = interviewRepository.save(newInterview);
 
@@ -81,8 +83,9 @@ public class InterviewService {
     }
 
     @Transactional 
-    public InterviewResponse updateInterview(InterviewUpdateRequest request, UserDetails loggedInUser) {           
-        Interview interviewToUpdate = interviewRepository.findById(request.interviewId())
+    public InterviewResponse updateInterview(UUID interviewId, InterviewUpdateRequest request, UserDetails loggedInUser) {
+        requireHrSpecialist(loggedInUser.getUsername());
+        Interview interviewToUpdate = interviewRepository.findById(interviewId)
         .orElseThrow(() -> new ResourceNotFoundException("Resource not found", "Interview with provided ID does not exist"));
 
         this.applyEditableFields(interviewToUpdate, request.interviewType(), request.scheduledAt(), request.durationMinutes(), request.location(), request.interviewer(), request.description());
@@ -94,19 +97,24 @@ public class InterviewService {
 
     private void applyEditableFields(Interview interview, String interviewType, LocalDateTime scheduledAt,
             Integer durationMinutes, String location, String interviewer, String description) {
-        interview.setInterviewType(EInterviewType.valueOf(interviewType));
+        if (interviewType == null || interviewType.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Interview type is required");
+        }
+        try {
+            interview.setInterviewType(EInterviewType.valueOf(interviewType.trim().toUpperCase(Locale.ROOT)));
+        } catch (IllegalArgumentException exception) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid interview type", exception);
+        }
         interview.setScheduledAt(scheduledAt);
         interview.setDurationMinutes(durationMinutes);
         interview.setLocation(location);
+        interview.setInterviewer(interviewer);
         interview.setDescription(description);
-
     }
 
     private void requireHrSpecialist(String username) {
         if (!userService.isHrSpecialist(userService.getUserByEmailOrThrow(username))) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only HR specialists can view all interviews");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only HR specialists can manage interviews");
         }
     }
-
-
 }
