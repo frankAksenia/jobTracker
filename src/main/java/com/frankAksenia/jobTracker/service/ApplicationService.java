@@ -70,11 +70,11 @@ public class ApplicationService {
     }
 
     @Transactional
-    public ApplicationResponse updateApplication(ApplicationUpdateRequest request, String userEmail) {
+    public ApplicationResponse updateApplication(UUID applicationId, ApplicationUpdateRequest request, String userEmail) {
 
         User user = userService.getUserByEmailOrThrow(userEmail);
 
-        JobApplication application = findAccessibleApplication(user, request.applicationId())
+        JobApplication application = findAccessibleApplication(user, applicationId)
             .orElseThrow(() -> new ResourceNotFoundException("Resource not found", "Application with the given ID does not exist for the specified user."));
 
         applyEditableFields(application, request.companyName(), request.position(), request.location(),
